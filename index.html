@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SoDiary</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bree+Serif&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>SoDiary</h1>
+        </header>
+        
+        <nav class="tabs">
+            <button class="tab-btn active" data-tab="schedule">Расписание</button>
+            <button class="tab-btn" data-tab="grades">Оценки</button>
+        </nav>
+
+        <main>
+            <section id="schedule" class="tab-content active">
+                <div class="schedule-image-container">
+                    <img src="images/расписание.png" alt="Расписание" class="schedule-image">
+                </div>
+            </section>
+
+            <section id="grades" class="tab-content">
+                <div class="grades-table-container">
+                    <table class="grades-table">
+                        <thead>
+                            <tr>
+                                <th class="subject-column">Предмет</th>
+                                <th class="grades-column">Оценки</th>
+                                <th class="average-column">Средний балл</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Астрономия</td>
+                                <td class="grades-container" data-subject="Астрономия"></td>
+                                <td class="average-cell">-</td>
+                            </tr>
+                            <tr>
+                                <td>Биология</td>
+                                <td class="grades-container" data-subject="Биология"></td>
+                                <td class="average-cell">-</td>
+                            </tr>
+                            <tr>
+                                <td>Иностранный язык (английский)</td>
+                                <td class="grades-container" data-subject="Английский"></td>
+                                <td class="average-cell">-</td>
+                            </tr>
+                            <tr>
+                                <td>Иностранный язык (французский)</td>
+                                <td class="grades-container" data-subject="Французский"></td>
+                                <td class="average-cell">-</td>
+                            </tr>
+                            <tr>
+                                <td>Информатика</td>
+                                <td class="grades-container" data-subject="Информатика"></td>
+                                <td class="average-cell">-</td>
+                            </tr>
+                            <tr>
+                                <td>История</td>
+                                <td class="grades-container" data-subject="История"></td>
+                                <td class="average-cell">-</td>
+                            </tr>
+                            <tr>
+                                <td>Психология</td>
+                                <td class="grades-container" data-subject="Психология"></td>
+                                <td class="average-cell">-</td>
+                            </tr>
+                            <tr>
+                                <td>Философия</td>
+                                <td class="grades-container" data-subject="Философия"></td>
+                                <td class="average-cell">-</td>
+                            </tr>
+                            <tr>
+                                <td>Экономика</td>
+                                <td class="grades-container" data-subject="Экономика"></td>
+                                <td class="average-cell">-</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="gradeModal" class="modal">
+                    <div class="modal-content">
+                        <span class="close">&times;</span>
+                        <h3>Выберите оценку</h3>
+                        <div class="grade-options">
+                            <button class="grade-option" data-grade="Н">Н</button>
+                            <button class="grade-option" data-grade="2">2</button>
+                            <button class="grade-option" data-grade="3">3</button>
+                            <button class="grade-option" data-grade="4">4</button>
+                            <button class="grade-option" data-grade="5">5</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        document.querySelectorAll('.tab-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                    content.style.display = 'none';
+                });
+                
+                button.classList.add('active');
+                const activeContent = document.getElementById(button.dataset.tab);
+                activeContent.classList.add('active');
+                activeContent.style.display = 'block';
+            });
+        });
+
+        const modal = document.getElementById('gradeModal');
+        const closeBtn = document.querySelector('.close');
+        let currentContainer = null;
+
+        function calculateAverage(container) {
+            const grades = Array.from(container.querySelectorAll('.grade-cell'))
+                .map(cell => cell.textContent)
+                .filter(grade => grade !== 'Н' && grade !== '')
+                .map(grade => parseInt(grade));
+
+            if (grades.length === 0) return '-';
+
+            const sum = grades.reduce((a, b) => a + b, 0);
+            const average = (sum / grades.length).toFixed(1);
+            return average;
+        }
+
+        function updateAverage(container) {
+            const row = container.closest('tr');
+            const averageCell = row.querySelector('.average-cell');
+            const newAverage = calculateAverage(container);
+            
+            if (averageCell.textContent !== newAverage) {
+                averageCell.textContent = newAverage;
+                averageCell.classList.add('average-update');
+                setTimeout(() => {
+                    averageCell.classList.remove('average-update');
+                }, 500);
+            }
+        }
+
+        function saveGrades() {
+            const gradesData = {};
+            document.querySelectorAll('.grades-container').forEach(container => {
+                const subject = container.dataset.subject;
+                const grades = Array.from(container.querySelectorAll('.grade-cell'))
+                    .map(cell => cell.textContent)
+                    .filter(grade => grade !== '' && grade !== 'Н');
+                
+                if (grades.length > 0) {
+                    gradesData[subject] = grades;
+                }
+            });
+            
+            // Save each grade to the database
+            Object.entries(gradesData).forEach(([subject, grades]) => {
+                grades.forEach(grade => {
+                    fetch('http://localhost:3000/api/grades', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ subject, grade }),
+                    })
+                    .catch(error => console.error('Error saving grade:', error));
+                });
+            });
+        }
+
+        function createGradeCell(grade = '', gradeId = null) {
+            const gradeCell = document.createElement('div');
+            gradeCell.className = 'grade-cell' + (grade ? ' has-grade' : '');
+            gradeCell.textContent = grade;
+            if (gradeId) {
+                gradeCell.dataset.gradeId = gradeId;
+            }
+            
+            gradeCell.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (gradeCell.textContent) {
+                    const gradeId = gradeCell.dataset.gradeId;
+                    if (gradeId) {
+                        fetch(`http://localhost:3000/api/grades/${gradeId}`, {
+                            method: 'DELETE',
+                        })
+                        .then(() => {
+                            gradeCell.remove();
+                            const container = gradeCell.parentElement;
+                            updateAverage(container);
+                        })
+                        .catch(error => console.error('Error deleting grade:', error));
+                    }
+                } else {
+                    currentContainer = gradeCell.parentElement;
+                    modal.style.display = 'block';
+                }
+            });
+
+            gradeCell.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (gradeCell.textContent) {
+                    const gradeId = gradeCell.dataset.gradeId;
+                    if (gradeId) {
+                        fetch(`http://localhost:3000/api/grades/${gradeId}`, {
+                            method: 'DELETE',
+                        })
+                        .then(() => {
+                            gradeCell.remove();
+                            const container = gradeCell.parentElement;
+                            updateAverage(container);
+                        })
+                        .catch(error => console.error('Error deleting grade:', error));
+                    }
+                }
+            });
+
+            return gradeCell;
+        }
+
+        document.querySelectorAll('.grades-container').forEach(container => {
+            container.addEventListener('click', () => {
+                currentContainer = container;
+                modal.style.display = 'block';
+            });
+        });
+
+        document.querySelectorAll('.grade-option').forEach(button => {
+            button.addEventListener('click', () => {
+                if (currentContainer) {
+                    const gradeCell = createGradeCell(button.dataset.grade);
+                    currentContainer.appendChild(gradeCell);
+                    updateAverage(currentContainer);
+                    saveGrades();
+                }
+                modal.style.display = 'none';
+            });
+        });
+
+        function loadGrades() {
+            fetch('http://localhost:3000/api/grades')
+                .then(response => response.json())
+                .then(grades => {
+                    const gradesBySubject = {};
+                    grades.forEach(grade => {
+                        if (!gradesBySubject[grade.subject]) {
+                            gradesBySubject[grade.subject] = [];
+                        }
+                        gradesBySubject[grade.subject].push({
+                            value: grade.grade,
+                            id: grade.id
+                        });
+                    });
+
+                    document.querySelectorAll('.grades-container').forEach(container => {
+                        const subject = container.dataset.subject;
+                        container.innerHTML = '';
+                        
+                        if (gradesBySubject[subject]) {
+                            gradesBySubject[subject].forEach(grade => {
+                                const gradeCell = createGradeCell(grade.value, grade.id);
+                                container.appendChild(gradeCell);
+                            });
+                        }
+                        
+                        const currentCells = container.querySelectorAll('.grade-cell').length;
+                        const emptyCellsNeeded = Math.max(0, 5 - currentCells);
+                        for (let i = 0; i < emptyCellsNeeded; i++) {
+                            container.appendChild(createGradeCell());
+                        }
+                        
+                        updateAverage(container);
+                    });
+                })
+                .catch(error => console.error('Error loading grades:', error));
+        }
+
+        closeBtn.addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+
+        window.addEventListener('click', (event) => {
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+
+        loadGrades();
+    </script>
+</body>
+</html> 
